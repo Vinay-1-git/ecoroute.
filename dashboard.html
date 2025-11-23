@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EcoRoute - Dashboard</title>
+    <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="logo-section">
+            <img src="https://cdn-icons-png.flaticon.com/512/3104/3104807.png" alt="EcoRoute Logo" class="logo">
+            <h1>ECO ROUTE</h1>
+        </div>
+        <div class="user-section">
+            <button class="voice-btn" onclick="toggleVoiceAssistant()">🎤 Voice Assistant</button>
+            <span id="userName">User</span>
+            <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="destination-panel">
+                <h2>🗺️ Plan Your Route</h2>
+                
+                <div class="input-group">
+                    <label>From</label>
+                    <input type="text" id="fromLocation" placeholder="Enter starting point">
+                </div>
+                
+                <div class="input-group">
+                    <label>To</label>
+                    <input type="text" id="toLocation" placeholder="Enter destination">
+                </div>
+                
+                <button class="search-btn" onclick="searchRoute()">Find Eco Routes</button>
+                
+                <div id="routeOptions" class="route-options"></div>
+            </div>
+
+            <!-- Language Selection -->
+            <div class="language-panel">
+                <h3>🌐 Language</h3>
+                <select id="languageSelect" onchange="changeLanguage()">
+                    <option value="en">English</option>
+                    <option value="hi">हिंदी (Hindi)</option>
+                    <option value="kn">ಕನ್ನಡ (Kannada)</option>
+                    <option value="ta">தமிழ் (Tamil)</option>
+                    <option value="te">తెలుగు (Telugu)</option>
+                    <option value="ml">മലയാളം (Malayalam)</option>
+                    <option value="bn">বাংলা (Bengali)</option>
+                    <option value="mr">मराठी (Marathi)</option>
+                    <option value="gu">ગુજરાતી (Gujarati)</option>
+                    <option value="pa">ਪੰਜਾਬੀ (Punjabi)</option>
+                </select>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Map Container -->
+            <div class="map-container">
+                <div id="map"></div>
+                <div class="map-legend">
+                    <div class="legend-item">
+                        <span class="legend-color green"></span>
+                        <span>Eco Route (Low Pollution)</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color yellow"></span>
+                        <span>Moderate Route</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color red"></span>
+                        <span>High Pollution Route</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dashboard Stats -->
+            <div class="dashboard-stats">
+                <div class="stat-card">
+                    <div class="stat-icon">🌤️</div>
+                    <div class="stat-content">
+                        <h3>Weather</h3>
+                        <p id="weatherData">Loading...</p>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon">🚗</div>
+                    <div class="stat-content">
+                        <h3>Vehicle Density</h3>
+                        <p id="vehicleDensity">Medium</p>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon">💨</div>
+                    <div class="stat-content">
+                        <h3>CO2 Level</h3>
+                        <p id="co2Level">420 ppm</p>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon">🏭</div>
+                    <div class="stat-content">
+                        <h3>Carbon Emission</h3>
+                        <p id="carbonEmission">2.5 kg/km</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Traffic Alerts -->
+            <div class="traffic-section">
+                <h2>🚦 Traffic Updates</h2>
+                <div id="trafficAlerts" class="traffic-alerts"></div>
+            </div>
+
+            <!-- Feedback Section -->
+            <div class="feedback-section">
+                <h2>📝 Your Feedback</h2>
+                <textarea id="feedbackText" placeholder="Share your experience with EcoRoute..."></textarea>
+                <div class="rating">
+                    <span>Rate your experience:</span>
+                    <div class="stars">
+                        <span class="star" data-rating="1">⭐</span>
+                        <span class="star" data-rating="2">⭐</span>
+                        <span class="star" data-rating="3">⭐</span>
+                        <span class="star" data-rating="4">⭐</span>
+                        <span class="star" data-rating="5">⭐</span>
+                    </div>
+                </div>
+                <button class="submit-btn" onclick="submitFeedback()">Submit Feedback</button>
+            </div>
+        </main>
+    </div>
+
+    <!-- Voice Assistant Modal -->
+    <div id="voiceModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="toggleVoiceAssistant()">&times;</span>
+            <h2>🎤 Voice Assistant</h2>
+            <div class="voice-status">
+                <div id="voiceAnimation" class="voice-animation"></div>
+                <p id="voiceStatus">Click microphone to speak</p>
+            </div>
+            <button class="mic-btn" id="micBtn" onclick="startVoiceRecognition()">
+                <span class="mic-icon">🎤</span>
+            </button>
+            <p id="voiceTranscript"></p>
+            <div id="voiceResponse"></div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="dashboard.js"></script>
+</body>
+</html>
