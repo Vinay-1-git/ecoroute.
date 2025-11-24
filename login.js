@@ -9,7 +9,7 @@ function switchToLogin() {
     document.getElementById('loginForm').classList.add('active');
 }
 
-// Email validation - must end with @gmail.com
+// Email validation
 function validateEmail(email) {
     return email.endsWith('@gmail.com');
 }
@@ -25,7 +25,7 @@ function validatePassword(password) {
     return rules;
 }
 
-// Real-time password validation for signup
+// Real-time password validation
 document.addEventListener('DOMContentLoaded', function() {
     const signupPassword = document.getElementById('signupPassword');
     
@@ -41,8 +41,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Handle Login
-function handleLogin(event) {
+// ⭐ Handle Login with Backend Connection
+async function handleLogin(event) {
     event.preventDefault();
     
     const email = document.getElementById('loginEmail').value;
@@ -60,32 +60,71 @@ function handleLogin(event) {
         isValid = false;
     }
     
-    // Check if user exists
-    const storedUser = localStorage.getItem(email);
+    if (!isValid) return false;
     
-    if (!storedUser) {
-        document.getElementById('loginEmailError').textContent = 'Account not found. Please sign up.';
-        isValid = false;
-    } else {
-        const userData = JSON.parse(storedUser);
-        if (userData.password !== password) {
-            document.getElementById('loginPasswordError').textContent = 'Incorrect password';
-            isValid = false;
+    // ⭐ Try to connect to backend first
+    if (typeof API !== 'undefined') {
+        try {
+            // Show loading indicator
+            const loginBtn = event.target.querySelector('button[type="submit"]');
+            const originalText = loginBtn.textContent;
+            loginBtn.textContent = 'Connecting...';
+            loginBtn.disabled = true;
+            
+            // Call backend API
+            const result = await API.login({ email, password });
+            
+            if (result.success) {
+                // Backend authentication successful
+                localStorage.setItem('currentUser', email);
+                localStorage.setItem('userName', result.data.user.name || 'User');
+                alert('Login successful!');
+                window.location.href = 'dashboard.html';
+            } else {
+                // Backend authentication failed
+                document.getElementById('loginPasswordError').textContent = 
+                    result.data?.message || 'Login failed. Please try again.';
+            }
+            
+            // Restore button
+            loginBtn.textContent = originalText;
+            loginBtn.disabled = false;
+            
+        } catch (error) {
+            console.log('Backend unavailable, using local storage...');
+            // Fallback to localStorage if backend is not available
+            loginWithLocalStorage(email, password);
         }
-    }
-    
-    if (isValid) {
-        // Store current user session
-        localStorage.setItem('currentUser', email);
-        alert('Login successful!');
-        window.location.href = 'dashboard.html';
+    } else {
+        // No API available, use localStorage
+        loginWithLocalStorage(email, password);
     }
     
     return false;
 }
 
-// Handle Signup
-function handleSignup(event) {
+// Fallback login using localStorage
+function loginWithLocalStorage(email, password) {
+    const storedUser = localStorage.getItem(email);
+    
+    if (!storedUser) {
+        document.getElementById('loginEmailError').textContent = 'Account not found. Please sign up.';
+        return;
+    }
+    
+    const userData = JSON.parse(storedUser);
+    if (userData.password !== password) {
+        document.getElementById('loginPasswordError').textContent = 'Incorrect password';
+        return;
+    }
+    
+    localStorage.setItem('currentUser', email);
+    alert('Login successful!');
+    window.location.href = 'dashboard.html';
+}
+
+// ⭐ Handle Signup with Backend Connection
+async function handleSignup(event) {
     event.preventDefault();
     
     const name = document.getElementById('signupName').value;
@@ -106,12 +145,6 @@ function handleSignup(event) {
         isValid = false;
     }
     
-    // Check if email already exists
-    if (localStorage.getItem(email)) {
-        document.getElementById('signupEmailError').textContent = 'Email already registered. Please login.';
-        isValid = false;
-    }
-    
     // Validate password
     const passwordRules = validatePassword(password);
     if (!passwordRules.length || !passwordRules.special || !passwordRules.number || !passwordRules.uppercase) {
@@ -125,18 +158,80 @@ function handleSignup(event) {
         isValid = false;
     }
     
-    if (isValid) {
-        // Store user data
-        const userData = {
-            name: name,
-            email: email,
-            password: password
-        };
-        localStorage.setItem(email, JSON.stringify(userData));
-        
-        alert('Account created successfully! Please login.');
-        switchToLogin();
+    if (!isValid) return false;
+    
+    // ⭐ Try to connect to backend
+    if (typeof API !== 'undefined') {
+        try {
+            // Show loading
+            const signupBtn = event.target.querySelector('button[type="submit"]');
+            const originalText = signupBtn.textContent;
+            signupBtn.textContent = 'Creating Account...';
+            signupBtn.disabled = true;
+            
+            // Call backend API
+            const result = await API.signup({ name, email, password });
+            
+            if (result.success) {
+                alert('Account created successfully! Please login.');
+                switchToLogin();
+            } else {
+                document.getElementById('signupEmailError').textContent = 
+                    result.data?.message || 'Signup failed. Email may already exist.';
+            }
+            
+            // Restore button
+            signupBtn.textContent = originalText;
+            signupBtn.disabled = false;
+            
+        } catch (error) {
+            console.log('Backend unavailable, using local storage...');
+            signupWithLocalStorage(name, email, password);
+        }
+    } else {
+        signupWithLocalStorage(name, email, password);
     }
     
     return false;
 }
+
+// Fallback signup using localStorage
+function signupWithLocalStorage(name, email, password) {
+    if (localStorage.getItem(email)) {
+        document.getElementById('signupEmailError').textContent = 'Email already registered. Please login.';
+        return;
+    }
+    
+    const userData = { name, email, password };
+    localStorage.setItem(email, JSON.stringify(userData));
+    
+    alert('Account created successfully! Please login.');
+    switchToLogin();
+}
+
+// Show connection status
+window.addEventListener('DOMContentLoaded', async () => {
+    if (typeof checkBackendStatus !== 'undefined') {
+        const isConnected = await checkBackendStatus();
+        
+        // Show status message
+        const statusDiv = document.createElement('div');
+        statusDiv.style.cssText = `
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-size: 12px;
+            font-weight: bold;
+            z-index: 9999;
+            background: ${isConnected ? '#22c55e' : '#fbbf24'};
+            color: white;
+        `;
+        statusDiv.textContent = isConnected ? '✓ Backend Connected' : '⚠ Using Offline Mode';
+        document.body.appendChild(statusDiv);
+        
+        // Remove after 3 seconds
+        setTimeout(() => statusDiv.remove(), 3000);
+    }
+});
